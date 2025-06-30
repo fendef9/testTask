@@ -1,8 +1,6 @@
 import { State, Direction } from "./enums";
 import { callObj } from "./interfaces";
-
-// eslint-disable-next-line
-type CallBack = (releaseButton: Direction, floor: number) => {};
+import { CallBack } from "./types";
 
 class Elevator {
   constructor(floorsTotal = 4, maxCapasity = 2) {

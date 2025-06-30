@@ -3,9 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>Test Task</title>
   </head>
   <body>
-    <script src="./index.js"></script>
+    <div id="wrapper">
+      <div class="input-wrapper">
+        <label id="label-lift-capacity" for="lift-capacity">Lift Capacity: 2</label>
+        <input type="range" name="lift-capacity" id="lift-capacity" min="2" max="4" value="2" />
+      </div>
+      <div class="input-wrapper">
+        <label id="label-floors-count" for="floors-count">Floors Count: 4</label>
+        <input type="range" name="floors-count" id="floors-count" min="4" max="10" value="4" />
+      </div>
+      <button id="apply">Apply Changes</button>
+    </div>
   </body>
 </html>

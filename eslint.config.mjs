@@ -16,7 +16,8 @@ export default [
       "package-lock.json",
       "package.json",
       "tsconfig.json",
-      "webpack.config.cjs"
+      "webpack.config.cjs",
+      "./src/ts/types.ts"
     ],
   },
   {
