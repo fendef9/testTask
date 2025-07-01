@@ -1,11 +1,11 @@
 import "./formEventManager";
 import { OnApplay } from "./OnApplay";
-// import { Tween, Easing } from "@tweenjs/tween.js";
-import { Container } from "pixi.js";
+import { Container } from "./PixiExtention";
 import { App as app } from "./AppSingleton";
-import { initDevtools } from "@pixi/devtools";
+// import { initDevtools } from "@pixi/devtools";
 import { Building } from "./Building";
 import { Human } from "./Human";
+// import { HumanSpawner } from "./HumanSpawner";
 
 const program = async () => {
   const container = new Container();
@@ -17,10 +17,9 @@ const program = async () => {
     // container.removeChildren();
     // container.addChild(b.draw());
     console.log(liftCapacity, floorsCount);
-    human.go();
   };
 
-  initDevtools({ app });
+  // initDevtools({ app });
   await app.init({ background: "#1099bb", resizeTo: window });
   document.body.appendChild(app.canvas);
 
@@ -42,15 +41,49 @@ const program = async () => {
     x: 900,
     y: 35,
     moveTo: 100,
+    humanId: 1,
   });
-  human.init();
+
+  
+  setTimeout(() => {
+    var human1 = new Human({
+    floorCurrent: 2,
+    floorDesired: 4,
+    x: 900,
+    y: 35,
+    moveTo: 100,
+    humanId: 2,
+  });
+
+    aa.addChild(human1.init());
+    human1.go();
+  }, 5000);
+
+  
+  setTimeout(() => {
+    var human2 = new Human({
+    floorCurrent: 1,
+    floorDesired: 5,
+    x: 900,
+    y: 35,
+    moveTo: 100,
+    humanId: 3,
+  });
+
+    aa.addChild(human2.init());
+    human2.go();
+  }, 10000);
+  // const spawner = new HumanSpawner();
   const aa = b.draw();
   aa.addChild(human.init());
-
+  human.go();
+  aa.label = "Humans"
   container.addChild(aa);
+  // container.addChild(spawner.init())
   container.x = 100;
   container.y = 100;
   app.stage.addChild(container);
+  console.log(container.getContainerBylabel("Human: 1")?.label);
 };
 
 program();

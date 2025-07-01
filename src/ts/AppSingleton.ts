@@ -1,4 +1,4 @@
-import { Application } from "pixi.js";
+import { Application } from "./PixiExtention";
 
 const App = new Application();
 

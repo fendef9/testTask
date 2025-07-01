@@ -17,7 +17,9 @@ export default [
       "package.json",
       "tsconfig.json",
       "webpack.config.cjs",
-      "./src/ts/types.ts"
+      "./src/ts/types.ts",
+      "./src/ts/EventObserver.ts",
+      "./src/ts/PixiExtention.ts"
     ],
   },
   {

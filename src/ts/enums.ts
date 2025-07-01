@@ -12,4 +12,9 @@ enum State {
   Move,
 }
 
-export { Direction, State };
+enum LookDirection {
+  Left,
+  Right,
+}
+
+export { Direction, State, LookDirection };

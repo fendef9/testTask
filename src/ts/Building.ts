@@ -1,4 +1,4 @@
-import { Container, Graphics, Text } from "pixi.js";
+import { Container, Graphics, Text } from "./PixiExtention";
 
 interface BuildingObj {
   floorsCount: number;
@@ -55,12 +55,12 @@ class Building {
       a += this.floorHeight;
     }
 
-    const mask = new Graphics();
+    // const mask = new Graphics();
 
-    mask.rect(-2, -2, this.floorWidth + 5, this.floorsCount * this.floorHeight + 5).fill();
+    // mask.rect(-2, -2, this.floorWidth + 5, this.floorsCount * this.floorHeight + 5).fill();
 
-    container.addChild(graphics, mask);
-    container.mask = mask;
+    container.addChild(graphics) //, mask);
+    // container.mask = mask;
 
     return container;
   }
