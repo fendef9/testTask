@@ -15,6 +15,14 @@ enum State {
 enum LookDirection {
   Left,
   Right,
+  None,
 }
 
-export { Direction, State, LookDirection };
+enum HumanLiveCycle {
+  Born,
+  ToElevator,
+  InToElevator,
+  FromElevator,
+  Die,
+}
+export { Direction, State, LookDirection, HumanLiveCycle };

@@ -1,4 +1,6 @@
-import { Container, Graphics, Text } from "./PixiExtention";
+import { Container, Graphics } from "pixi.js";
+import { HumanSpawner } from "./HumanSpawner";
+import { Floor } from "./Floor";
 
 interface BuildingObj {
   floorsCount: number;
@@ -42,25 +44,36 @@ class Building {
 
     let a = 0;
     for (let i = this.floorsCount; i >= 1; i--) {
-      graphics
-        .moveTo(this.elevatorShaft, a)
-        .lineTo(this.floorWidth, a)
-        .stroke({ width: this.lineWidth, color: this.lineColor });
+      const spawner = new HumanSpawner({
+        floorsTotal: this.floorsCount,
+        floorCurrent: i,
+        x: 900,
+        y: a + 40,
+        moveTo: -800,
+      });
 
-      const t = new Text({ text: `Level ${i}` });
-      // t.pivot.set(t.width / 2 - 90, t.height / 2 - 35)
-      t.position.set(this.textDisplacementRight, a + this.textDisplacementDown);
-      container.addChild(t);
+      const floor = new Floor({
+        x: this.elevatorShaft,
+        y: a,
+        floorCurrent: i,
+        lineColor: this.lineColor,
+        floorLength: this.floorWidth,
+        lineWidth: this.lineWidth,
+        textDisplacementDown: this.textDisplacementDown,
+        textDisplacementRight: this.textDisplacementRight,
+      });
+      
+      floor.humanSpawner = spawner;
+      container.addChild(floor.init());
 
       a += this.floorHeight;
     }
 
-    // const mask = new Graphics();
+    const mask = new Graphics();
+    mask.rect(-2, -2, this.floorWidth + 5, this.floorsCount * this.floorHeight + 5).fill();
 
-    // mask.rect(-2, -2, this.floorWidth + 5, this.floorsCount * this.floorHeight + 5).fill();
-
-    container.addChild(graphics) //, mask);
-    // container.mask = mask;
+    container.addChild(graphics, mask);
+    container.mask = mask;
 
     return container;
   }

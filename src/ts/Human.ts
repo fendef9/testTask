@@ -1,55 +1,45 @@
-import { Container, Graphics, Text } from "./PixiExtention";
+import { Container, Graphics, Text, Ticker } from "pixi.js";
 import { Direction, LookDirection } from "./enums";
 import { Tween, Easing } from "@tweenjs/tween.js";
-import { App as app } from "./AppSingleton";
 import { EventObserver, CustomEvents } from "./EventObserver";
+import { Utils } from "./Utils";
 
 const emmiter = new EventObserver<CustomEvents>();
 
 interface HumanObj {
   floorCurrent: number;
   floorDesired: number;
-  colorUp?: number;
-  colorDown?: number;
   x: number;
   y: number;
-  width?: number;
-  height?: number;
   moveTo: number;
-  strokeWidth?: number;
-  animSpeed?: number;
-  humanId: number;
-  lookDistance?: number;
-  lookDirection?: LookDirection;
 }
 class Human {
   constructor(humanObj: HumanObj) {
-    this.humanId = humanObj.humanId;
     this.floorCurrent = humanObj.floorCurrent;
     this.floorDesired = humanObj.floorDesired;
-    this.colorUp = humanObj.colorUp ?? 0xff00ff;
-    this.colorDown = humanObj.colorDown ?? 0x00ff00;
     this.x = humanObj.x;
     this.y = humanObj.y;
-    this.width = humanObj.width ?? 30;
-    this.height = humanObj.height ?? 50;
-    this.moveTo = humanObj.moveTo;
-    this.colorCurrent = 0xff00ff;
-    this.strokeWidth = humanObj.strokeWidth ?? 2;
-    this.animSpeed = humanObj.animSpeed ?? 8000;
-    this.lookDistance = humanObj.lookDistance ?? 35;
-    this.lookDirection = humanObj.lookDirection ?? LookDirection.Left;
-    this.tolerance = 2;
+    this._moveTo = humanObj.moveTo;
     this.graphics = new Graphics();
-    this.direction = Direction.None;
     this.container = new Container();
+    this.colorUp = 0xff00ff;
+    this.colorDown = 0x00ff00;
+    this.width = 30;
+    this.height = 50;
+    this.strokeWidth = 2;
+    this.animSpeed = 8000;
+    this.lookDistance = 35;
+    this.humanId = 0;
+    this.colorCurrent = 0xff00ff;
+    this.tolerance = 2;
+    this.direction = Direction.None;
+
     this.tween = this.createTween();
     this.addTicker();
   }
 
+  private _moveTo: number;
   public floorCurrent;
-  public lookDirection;
-  public humanId;
   public floorDesired;
   public colorUp;
   public colorDown;
@@ -57,22 +47,53 @@ class Human {
   public y;
   public width;
   public height;
-  public moveTo;
   public direction;
   public strokeWidth;
   public animSpeed;
+  public lookDistance;
+  public humanId;
   private tween;
   private colorCurrent;
   private graphics;
-  private container;
-  public lookDistance;
   private tolerance;
+  private container;
+  private ticker: (() => Ticker) | null = null;
+  private static humansCount = 0;
 
   private addTicker() {
-    app.ticker.add(() => {
+    const func = () => {
       this.tween.update();
-      this.look() && this.stop();
-    });
+      !this.look() ? this.continue() : this.pause();
+    };
+    Ticker.shared.add(func);
+    this.ticker = () => Ticker.shared.remove(func);
+  }
+
+  private deleteTicker() {
+    this.ticker?.();
+  }
+
+  set moveTo(value: number) {
+    this._moveTo = value;
+    this.tween = this.createTween();
+  }
+
+  get moveTo() {
+    return this._moveTo;
+  }
+
+  get lookDirection(): LookDirection {
+    return this.x < this.moveTo ? LookDirection.Right : LookDirection.Left;
+  }
+
+  createTween() {
+    return new Tween(this.container)
+      .to({ x: this._moveTo }, this.animSpeed)
+      .easing(Easing.Linear.In);
+  }
+
+  private static makeHuman() {
+    this.humansCount++;
   }
 
   go() {
@@ -81,13 +102,7 @@ class Human {
     });
   }
 
-  createTween(moveTo?: number) {
-    if (moveTo) this.moveTo = moveTo;
-
-    return new Tween(this.container)
-      .to({ x: this.moveTo }, this.animSpeed)
-      .easing(Easing.Linear.In);
-  }
+  //  make a setter for move to
 
   pause() {
     this.tween.pause();
@@ -106,30 +121,41 @@ class Human {
     this.tween.stop();
   }
 
-  delete() {}
+  delete() {
+    this.deleteTicker();
+    this.container.destroy({ children: true });
+  }
 
   look(): boolean {
-  
-    const siblibgs = this.container.getContainerBylabel("Humans")?.children;
+    const siblings = this.container.parent;
+    if (siblings?.label !== "Humans") throw new Error("All Humnan must be in Humans container");
     let viewPoint: number;
 
-    if (this.lookDirection === LookDirection.Left) viewPoint = this.container.x + -this.lookDistance;
-    else if (this.lookDirection === LookDirection.Right) viewPoint = this.container.x + this.lookDistance;
+    if (this.lookDirection === LookDirection.Left) {
+      viewPoint = this.container.x - this.lookDistance;
+    } else if (this.lookDirection === LookDirection.Right) {
+      viewPoint = this.container.x + this.lookDistance;
+    }
 
-    if (siblibgs) {
-      const result = siblibgs.find((e) => {
-        return e.x - this.tolerance <= viewPoint && e.x + this.tolerance >= viewPoint;
+    if (siblings) {
+      const result = siblings.children.find((e) => {
+        if (e?.script instanceof Human) {
+          const human = e.script;
+          if (human.lookDirection === this.lookDirection) {
+            const x = human.container.x;
+
+            return x - this.tolerance <= viewPoint && x + this.tolerance >= viewPoint;
+          }
+        }
       });
-
-      if (result && result.label?.includes("Human")) {
-        // console.log(`Human: ${this.humanId} see!`);
-        return true
-      };
+      if (result) return true;
     }
     return false;
   }
 
   init() {
+    Human.makeHuman();
+    this.humanId = Human.humansCount;
     this.container.label = `Human: ${this.humanId}`;
 
     if (this.floorCurrent > this.floorDesired) {
@@ -152,7 +178,11 @@ class Human {
     this.container.x = this.x;
     this.container.y = this.y;
 
-    this.container.script = this; // ?? maybe not need
+    this.container.script = this;
+
+    Utils.setTimeout(() => {
+      this.delete();
+    }, 20000);
 
     return this.container;
   }
