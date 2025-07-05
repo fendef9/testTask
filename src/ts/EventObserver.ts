@@ -1,7 +1,6 @@
 interface CustomEvents {
-  animationEnds: { entityId: number };
   elevatorStopsOnFloor: { floor: number };
-  elevatorGoFurther: {};
+  elevatorLeavesFloor: { floor: number }
 }
 
 class EventObserver<Events extends Record<string, any>> {

@@ -25,6 +25,8 @@ enum HumanLiveCycle {
   ToElevator,
   CallElevator,
   LookInside,
+  ReCallElevator,
+  WaitLeave,
   StepIn,
   WaitElevator,
   InElevator,

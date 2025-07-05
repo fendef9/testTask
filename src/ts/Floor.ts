@@ -40,7 +40,7 @@ class Floor {
   private floorLength;
   private _humanSpawner: HumanSpawner | null = null;
 
-  set humanSpawner(value: HumanSpawner) {
+  set humanSpawner(value: HumanSpawner | null) {
     this._humanSpawner = value;
   }
 
@@ -52,10 +52,11 @@ class Floor {
 
     this.text.position.set(this.textDisplacementRight, this.y + this.textDisplacementDown);
 
-    if (!this._humanSpawner) throw new Error("Human Spawner must be added befor Floor.init()");
+    if (!this._humanSpawner) this.container.addChild(this.graphics, this.text);
+    else  this.container.addChild(this.graphics, this.text, this._humanSpawner.init());
 
     this.container.label = `Floor: ${this.floorCurrent}`;
-    this.container.addChild(this.graphics, this.text, this._humanSpawner.init());
+   
 
     return this.container;
   }

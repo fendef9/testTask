@@ -1,6 +1,7 @@
 import { Container, Graphics, Ticker } from "pixi.js";
 import { Human } from "./Human";
 import { Utils } from "./Utils";
+import { Elevator } from "./Elevator";
 
 interface HumanSpawnerObj {
   floorsTotal: number;
@@ -10,6 +11,7 @@ interface HumanSpawnerObj {
   moveTo: number;
   humanWidth: number;
   humanHeight: number;
+  elevator:Elevator
 }
 
 class HumanSpawner {
@@ -21,17 +23,20 @@ class HumanSpawner {
     this.humanWidth = humanSpawnerObj.humanWidth;
     this.humanHeight = humanSpawnerObj.humanHeight;
     this.moveTo = humanSpawnerObj.moveTo;
+    this.elevator = humanSpawnerObj.elevator
   }
 
+  private a = 0;
   private moveTo;
+  private elevator
   private floorsTotal;
   private floorCurrent;
   private x;
   private y;
   private humanWidth;
   private humanHeight;
-  private minSpawnTime = 4; // in seconds
-  private maxSpawnTime = 10; // in seconds
+  private minSpawnTime = 1; // in seconds
+  private maxSpawnTime = 2; // in seconds
   private container = new Container();
   private timer: null | (() => Ticker) = null;
 
@@ -72,6 +77,9 @@ class HumanSpawner {
   spawn() {
     this.timer = Utils.setInterval(
       () => {
+         if(this.a > 1) return
+        this.a ++;
+
         const human = new Human({
           floorCurrent: this.floorCurrent,
           floorDesired: this.randomExclude(1, this.floorsTotal, this.floorCurrent),
@@ -80,6 +88,7 @@ class HumanSpawner {
           moveTo: this.moveTo,
           humanWidth: this.humanWidth,
           humanHeight: this.humanHeight,
+          elevator: this.elevator,
         });
 
         this.container.addChild(human.init());

@@ -1,7 +1,9 @@
 import { Container, Graphics, Text, Application } from "pixi.js";
+import { LookDirection } from "./enums";
 
 declare module "pixi.js" {
   interface Container {
+    lookingDirection: LookDirection;
     getContainerBylabel(label: string): Container | null;
     getContainerBylabel(cb: (label: string) => boolean): Container | null;
   }

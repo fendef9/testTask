@@ -12,6 +12,7 @@ interface HumanObj {
   moveTo: number;
   humanWidth: number;
   humanHeight: number;
+  elevator: Elevator;
 }
 class Human {
   constructor(humanObj: HumanObj) {
@@ -34,12 +35,12 @@ class Human {
     this.tolerance = 2;
     this.lifeCycle = HumanLiveCycle.None;
     this.direction = Direction.None;
+    this.elevator = humanObj.elevator;
 
     this.tween = this.createTween();
     this.addTicker();
   }
 
-  private _moveTo: number;
   public floorCurrent;
   public floorDesired;
   public colorUp;
@@ -53,115 +54,167 @@ class Human {
   public animSpeed;
   public lookDistance;
   public humanId;
+  public container;
+  private _moveTo: number;
   private tween;
   private colorCurrent;
   private graphics;
   private tolerance;
-  public container;
-  private startLook = true;
+  private elevator;
   private lifeCycle;
   private ticker: (() => Ticker) | null = null;
   private static humansCount = 0;
 
   private addTicker() {
     const func = () => {
-      // !this.look() ? this.continue() : this.pause();
+      !this.look() ? this.continue() : this.pause();
       this.tween.update();
     };
     Ticker.shared.add(func);
     this.ticker = () => Ticker.shared.remove(func);
   }
 
-  // private getElevator() {
-  //   const elevator = this.container.getContainerBylabel("Elevator")!;
-  //   const script = elevator?.script as Elevator;
+  // private eventHandler(obj: { floor: number }) {
+  //   if (obj.floor === this.floorCurrent) {
+  //         this.lifeCycle = HumanLiveCycle.LookInside;
+  //         this.mainLogic();
+  //         return;
+  //   }
 
-  //   return { elevator, script };
   // }
-
+  
   private mainLogic() {
-    // if (this.lifeCycle === HumanLiveCycle.ToElevator) {
-    //   this.tween.start().onComplete(() => {
-    //     this.tween.stop();
-    //     this.lifeCycle = HumanLiveCycle.CallElevator;
-    //     this.mainLogic();
-    //     return;
-    //   });
-    // } else if (this.lifeCycle === HumanLiveCycle.CallElevator) {
-    //   const { script } = this.getElevator();
-    //   script.addStopOutdoor(this.floorCurrent);
+    if(this.lifeCycle === HumanLiveCycle.Born) {
+      this.container.lookingDirection = this.lookDirection;
+      this.lifeCycle = HumanLiveCycle.ToElevator;
+      console.log(`Born: ${this.humanId}`)
+      this.mainLogic();
+      return;
+    }
 
-    //   Observer.once("elevatorStopsOnFloor", (obj: { floor: number }) => {
-    //     if (obj.floor === this.floorCurrent) {
-    //       this.lifeCycle = HumanLiveCycle.LookInside;
-    //       this.mainLogic();
-    //       return;
-    //     }
-    //   });
-    //   return;
-    // } else if (this.lifeCycle === HumanLiveCycle.LookInside) {
-    //   const { script } = this.getElevator();
-    //   const result =
-    //     script.lookinside() === this.direction || script.lookinside() === Direction.None;
+    else if (this.lifeCycle === HumanLiveCycle.ToElevator) {
+      this.tween.start().onComplete(() => {
+        this.tween.stop();
+        this.lifeCycle = HumanLiveCycle.CallElevator;
+        console.log(`To elevator: ${this.humanId}`)
+        this.mainLogic();
+        return;
+      });
+    }
 
-    //   script.mayInside() && result
-    //     ? (this.lifeCycle = HumanLiveCycle.StepIn)
-    //     : (this.lifeCycle = HumanLiveCycle.WaitElevator);
-    //   this.mainLogic();
-    //   return;
-    // } else if (this.lifeCycle === HumanLiveCycle.WaitElevator) {
-    //   Observer.once("elevatorStopsOnFloor", (obj: { floor: number }) => {
-    //     if (obj.floor === this.floorCurrent) {
-    //       this.lifeCycle = HumanLiveCycle.LookInside;
-    //       this.mainLogic();
-    //       return;
-    //     }
-    //   });
-    //   return;
-    // } else if (this.lifeCycle === HumanLiveCycle.StepIn) {
-    //   const { script } = this.getElevator();
-    //   console.log(`logic fires ${this.humanId}`);
-    //   script.addPassanger(this);
-    //   this.lifeCycle = HumanLiveCycle.InElevator;
+    else if (this.lifeCycle === HumanLiveCycle.CallElevator) {
+      this.elevator.addStop(this.floorCurrent);
+      // if(this.elevator.currentFloor === this.floorCurrent){
+      //   this.lifeCycle = HumanLiveCycle.LookInside;
+      //   this.mainLogic();
+      //   return;
+      // }
 
-    //   this.mainLogic();
-    //   return;
-    // } else if (this.lifeCycle === HumanLiveCycle.InElevator) {
-    //   const { script } = this.getElevator();
-    //   script.addStopIndoor(this.floorDesired);
-    //   this.lifeCycle = HumanLiveCycle.Riding;
+      this.lifeCycle = HumanLiveCycle.WaitElevator;
 
-    //   this.mainLogic();
-    //   return;
-    // } else if (this.lifeCycle === HumanLiveCycle.Riding) {
-    //   Observer.once("elevatorStopsOnFloor", (obj: { floor: number }) => {
-    //     if (obj.floor === this.floorDesired) {
-    //       this.lifeCycle = HumanLiveCycle.Out;
-    //       this.mainLogic();
-    //       return;
-    //     }
-    //   });
-    //   return;
-    // } else if (this.lifeCycle === HumanLiveCycle.Out) {
-    //   const { script } = this.getElevator();
-    //   script.removePessanger(this);
-    //   this.lifeCycle = HumanLiveCycle.FromElevator;
+       console.log(`Call Elevator: ${this.humanId}`)
+      Observer.once("elevatorStopsOnFloor", (obj: { floor: number }) => {
+        if (obj.floor === this.floorCurrent && this.lifeCycle === HumanLiveCycle.WaitElevator) {
+          this.lifeCycle = HumanLiveCycle.LookInside;
+          this.mainLogic();
+          return;
+        }
+      });
 
-    //   this.mainLogic();
-    //   return;
-    // } else if (this.lifeCycle === HumanLiveCycle.FromElevator) {
-    //   this.moveTo = 900;
-    //   this.tween.start().onComplete(() => {
-    //     this.lifeCycle = HumanLiveCycle.Die;
-    //     this.mainLogic();
-    //     return;
-    //   });
-    //   return;
-    // } else if (this.lifeCycle === HumanLiveCycle.Die) {
-    //   this.delete();
+      return;
+    }
+    
+    else if (this.lifeCycle === HumanLiveCycle.WaitElevator) {
+      
+      return;
+    }
 
-    //   return;
-    // }
+    else if (this.lifeCycle === HumanLiveCycle.LookInside) {
+      const result = this.elevator.lookinside() === this.direction || this.elevator.lookinside() === Direction.None;
+      
+      console.log(`Look Inside: ${this.humanId}`)
+      this.elevator.mayInside() && result
+        ? (this.lifeCycle = HumanLiveCycle.StepIn)
+        : (this.lifeCycle = HumanLiveCycle.ReCallElevator);
+      this.mainLogic();
+      return;
+    }
+
+    else if (this.lifeCycle === HumanLiveCycle.ReCallElevator) {
+      this.lifeCycle = HumanLiveCycle.WaitLeave;
+
+      Observer.once("elevatorLeavesFloor", (obj: { floor: number }) => {
+        if(obj.floor === this.floorCurrent && this.lifeCycle === HumanLiveCycle.WaitLeave) {
+          console.log(`Call Again: ${this.humanId}`)
+          this.lifeCycle = HumanLiveCycle.CallElevator;
+          this.mainLogic();
+          return;
+        }
+      });
+      return;
+    }
+
+    else if (this.lifeCycle === HumanLiveCycle.WaitLeave) {
+      return
+    }
+
+    else if (this.lifeCycle === HumanLiveCycle.StepIn) {
+      console.log(`AddPassanger: ${this.humanId}`)
+      this.elevator.addPassanger(this);
+      this.lifeCycle = HumanLiveCycle.InElevator;
+
+      this.mainLogic();
+      return;
+    }
+
+    else if (this.lifeCycle === HumanLiveCycle.InElevator) {
+      console.log(`in elevator: ${this.humanId}`)
+      this.elevator.addStop(this.floorDesired);
+      this.lifeCycle = HumanLiveCycle.Riding;
+
+      this.mainLogic();
+      return;
+    }
+
+    else if (this.lifeCycle === HumanLiveCycle.Riding) {
+      Observer.once("elevatorStopsOnFloor", (obj: { floor: number }) => {
+        if (obj.floor === this.floorDesired && this.lifeCycle === HumanLiveCycle.Riding) {
+          console.log(`Riding: ${this.humanId}`)
+          this.lifeCycle = HumanLiveCycle.Out;
+          this.mainLogic();
+          return;
+        }
+      });
+      return;
+    }
+
+    else if (this.lifeCycle === HumanLiveCycle.Out) {
+      console.log(`RemovePassanger: ${this.humanId}`)
+      this.elevator.removePessanger(this);
+      this.lifeCycle = HumanLiveCycle.FromElevator;
+
+      this.mainLogic();
+      return;
+    }
+
+    else if (this.lifeCycle === HumanLiveCycle.FromElevator) {
+      this.container.lookingDirection = this.lookDirection;
+      this.moveTo = 900;
+      this.tween.start().onComplete(() => {
+        console.log(`From Elevator: ${this.humanId}`)
+        this.lifeCycle = HumanLiveCycle.Die;
+        this.mainLogic();
+        return;
+      });
+      return;
+    }
+
+    else if (this.lifeCycle === HumanLiveCycle.Die) {
+      console.log(`Die: ${this.humanId}`)
+      this.delete();
+
+      return;
+    }
   }
 
   private deleteTicker() {
@@ -191,8 +244,6 @@ class Human {
     this.humansCount++;
   }
 
-  //  make a setter for move to
-
   pause() {
     this.tween.pause();
   }
@@ -216,37 +267,33 @@ class Human {
   }
 
   look(): boolean {
-    return false
-    // if (!this.startLook) return false;
-    // const siblings = this.container.parent;
-    // if (siblings?.label !== "Humans") throw new Error("All Humnan must be in Humans container");
-    // let viewPoint: number;
+    const siblings = this.container.parent;
+    if (siblings?.label !== "Humans") return false;
+    let viewPoint: number;
 
-    // if (this.lookDirection === LookDirection.Left) {
-    //   viewPoint = this.container.x - this.lookDistance;
-    // } else if (this.lookDirection === LookDirection.Right) {
-    //   viewPoint = this.container.x + this.lookDistance;
-    // }
+    if (this.lookDirection === LookDirection.Left) {
+      viewPoint = this.container.x - this.lookDistance;
+    } else if (this.lookDirection === LookDirection.Right) {
+      viewPoint = this.container.x + this.lookDistance;
+    }
 
-    // if (siblings) {
-    //   const result = siblings.children.find((e) => {
-    //     if (e?.script instanceof Human) {
-    //       const human = e.script;
-    //       if (human.lookDirection === this.lookDirection) {
-    //         const x = human.container.x;
+    if (siblings) {
+      const result = siblings.children.find((e) => {
+        if (e.label.includes(`Human: `)) {
+          if (e.lookingDirection === this.lookDirection) {
+            const x = e.x;
 
-    //         return x - this.tolerance <= viewPoint && x + this.tolerance >= viewPoint;
-    //       }
-    //     }
-    //   });
-    //   if (result) return true;
-    // }
-    // return false;
+            return x - this.tolerance <= viewPoint && x + this.tolerance >= viewPoint;
+          }
+        }
+      });
+      if (result) return true;
+    }
+    return false;
   }
 
   init() {
     Human.makeHuman();
-    this.lifeCycle = HumanLiveCycle.Born;
     this.humanId = Human.humansCount;
     this.container.label = `Human: ${this.humanId}`;
 
@@ -270,7 +317,7 @@ class Human {
     this.container.x = this.x;
     this.container.y = this.y;
 
-    this.lifeCycle = HumanLiveCycle.ToElevator;
+    this.lifeCycle = HumanLiveCycle.Born;
     this.mainLogic();
 
     return this.container;
