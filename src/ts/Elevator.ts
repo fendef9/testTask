@@ -1,9 +1,9 @@
 import { Easing, Tween } from "@tweenjs/tween.js";
 import { Container, Graphics, Ticker } from "pixi.js";
-import { Direction, State } from "./enums";
 import { Observer } from "./EventObserver";
 import { Utils } from "./Utils";
 import { Human } from "./Human";
+import { Direction } from "./enums";
 
 interface ElevatorObj {
   x: number;
@@ -33,7 +33,10 @@ class Elevator {
     this.container = new Container();
     this.movingSpeed = 1000; // in ms
     this.waitingTime = 800; // in ms
+    this.humanIndex = [];
     this.addTicker();
+
+    Elevator.instances.push(this);
   }
 
   private x;
@@ -48,12 +51,23 @@ class Elevator {
   private container;
   public currentFloor;
   private elevatorShaftWidth;
+  private humanIndex: string[] | null[];
   private allStops: number[];
   private ticker: null | (() => Ticker) = null;
   private humansDirection: Direction;
   public isDoorOpen: boolean;
   public movingSpeed;
   public waitingTime;
+  private static instances: Elevator[] = [];
+
+  static wipe() {
+    Elevator.instances.forEach((v) => v.delete());
+  }
+
+  delete() {
+    this.deleteTicker();
+    this.container.destroy({ children: true });
+  }
 
   public init() {
     this.graphics
@@ -71,19 +85,21 @@ class Elevator {
     this.container.label = "Elevator";
     this.container.addChild(this.graphics);
 
+    for (let i = 0; i < this.elevatorCapacity; i++) {
+      this.humanIndex[i] = null;
+    }
+
     this.elevatorLogic();
     return this.container;
   }
 
-  get seatsLeft () {
+  get seatsLeft() {
     return this.elevatorCapacity - this.currentElevatorCapacity;
   }
 
   public mayInside() {
-    const res = this.seatsLeft < 0 || this.seatsLeft > this.elevatorCapacity;
-    const res1 =  this.isDoorOpen;
-
-    console.log(`Door open: ${this.isDoorOpen}, this.seatsLeft > this.elevatorCapacity: ${this.seatsLeft > this.elevatorCapacity}`)
+    const res = this.seatsLeft <= 0 || this.seatsLeft > this.elevatorCapacity;
+    const res1 = this.currentElevatorCapacity <= this.elevatorCapacity && this.isDoorOpen;
     return !res && res1;
   }
 
@@ -98,7 +114,10 @@ class Elevator {
       { x: 160, y },
     ];
 
-    const pos = placeArr[this.seatsLeft - 1];
+    const index = this.humanIndex.findIndex((v) => v === null);
+    this.humanIndex[index] = passanger.container.label;
+
+    const pos = placeArr[index];
 
     const humanContainer = passanger.container;
     const parent = humanContainer.parent;
@@ -114,15 +133,17 @@ class Elevator {
 
   public removePessanger(passanger: Human) {
     this.currentElevatorCapacity -= 1;
-    
+
     if (this.seatsLeft === this.elevatorCapacity) this.humansDirection = Direction.None;
+
+    const index = this.humanIndex.findIndex((v) => v === passanger.container.label);
+    this.humanIndex[index] = null;
 
     const humanContainer = passanger.container;
     const parent = humanContainer.parent;
     parent.removeChild(humanContainer);
 
     const floor = parent.getContainerBylabel(`Floor: ${passanger.floorDesired}`)!;
-
 
     floor?.addChild(humanContainer);
     passanger.teleport(215, (this.floorTotal - passanger.floorDesired) * this.floorHeight + 40);
@@ -137,12 +158,9 @@ class Elevator {
     return result;
   }
 
-
   moveOneFloor(direction: Direction, onComplite: () => void) {
     let to;
     let floor = this.currentFloor;
-
-    console.log(`Peoples Direction: ${this.humansDirection}`)
 
     const startMooving = (to: number) => {
       this.tween = new Tween(this.container)
@@ -177,27 +195,25 @@ class Elevator {
     if (this.currentFloor === this.floorTotal) this.direction = Direction.Down;
     else if (this.currentFloor === 1) this.direction = Direction.Up;
     else if (this.humansDirection !== Direction.None) this.direction = this.humansDirection;
-    
-    console.log(`All STOPS: ${this.allStops}`)
-    if(result === 0) { 
+
+    if (result === 0) {
       this.moveOneFloor(this.direction, this.elevatorLogic);
     } else {
-        this.moveOneFloor(this.direction, this.stop);
+      this.moveOneFloor(this.direction, this.stop);
     }
   }
 
   stop() {
-    if  (this.allStops.includes(this.currentFloor)) {
+    if (this.allStops.includes(this.currentFloor)) {
       this.deleteStop(this.currentFloor);
       this.isDoorOpen = true;
       Observer.emit("elevatorStopsOnFloor", { floor: this.currentFloor });
-      
+
       Utils.setTimeout(() => {
         this.isDoorOpen = false;
         this.elevatorLogic();
       }, this.waitingTime);
-    } else  this.elevatorLogic();
-    
+    } else this.elevatorLogic();
   }
 
   public addStop(value: number) {

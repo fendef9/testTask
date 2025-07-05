@@ -25,6 +25,7 @@ class Floor {
     this.graphics = new Graphics();
     this.text = new Text({ text: `Level ${this.floorCurrent}` });
     this.container = new Container();
+    Floor.instances.push(this);
   }
 
   private lineWidth;
@@ -39,6 +40,15 @@ class Floor {
   private lineColor;
   private floorLength;
   private _humanSpawner: HumanSpawner | null = null;
+  static instances: Floor[] = [];
+
+  static wipe() {
+    Floor.instances.forEach((v) => v.delete());
+  }
+
+  delete() {
+    this.container?.destroy({ children: true });
+  }
 
   set humanSpawner(value: HumanSpawner | null) {
     this._humanSpawner = value;
@@ -53,10 +63,9 @@ class Floor {
     this.text.position.set(this.textDisplacementRight, this.y + this.textDisplacementDown);
 
     if (!this._humanSpawner) this.container.addChild(this.graphics, this.text);
-    else  this.container.addChild(this.graphics, this.text, this._humanSpawner.init());
+    else this.container.addChild(this.graphics, this.text, this._humanSpawner.init());
 
     this.container.label = `Floor: ${this.floorCurrent}`;
-   
 
     return this.container;
   }

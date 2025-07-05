@@ -3,6 +3,7 @@ import { Direction, LookDirection, HumanLiveCycle } from "./enums";
 import { Tween, Easing } from "@tweenjs/tween.js";
 import { Observer } from "./EventObserver";
 import { Elevator } from "./Elevator";
+import { Utils } from "./Utils";
 
 interface HumanObj {
   floorCurrent: number;
@@ -28,17 +29,19 @@ class Human {
     this.width = humanObj.humanWidth;
     this.height = humanObj.humanHeight;
     this.strokeWidth = 2;
-    this.animSpeed = 8000;
-    this.lookDistance = 35;
+    this.animSpeed = Utils.random(8000, 10000);
+    this.lookDistance = 40;
     this.humanId = 0;
     this.colorCurrent = 0xff00ff;
-    this.tolerance = 2;
+    this.tolerance = 4;
     this.lifeCycle = HumanLiveCycle.None;
     this.direction = Direction.None;
     this.elevator = humanObj.elevator;
 
     this.tween = this.createTween();
     this.addTicker();
+
+    Human.instances.push(this);
   }
 
   public floorCurrent;
@@ -63,6 +66,7 @@ class Human {
   private elevator;
   private lifeCycle;
   private ticker: (() => Ticker) | null = null;
+  private static instances: Human[] = [];
   private static humansCount = 0;
 
   private addTicker() {
@@ -82,37 +86,26 @@ class Human {
   //   }
 
   // }
-  
+
   private mainLogic() {
-    if(this.lifeCycle === HumanLiveCycle.Born) {
+    if (this.lifeCycle === HumanLiveCycle.Born) {
       this.container.lookingDirection = this.lookDirection;
       this.lifeCycle = HumanLiveCycle.ToElevator;
-      console.log(`Born: ${this.humanId}`)
+
       this.mainLogic();
       return;
-    }
-
-    else if (this.lifeCycle === HumanLiveCycle.ToElevator) {
+    } else if (this.lifeCycle === HumanLiveCycle.ToElevator) {
       this.tween.start().onComplete(() => {
         this.tween.stop();
         this.lifeCycle = HumanLiveCycle.CallElevator;
-        console.log(`To elevator: ${this.humanId}`)
+
         this.mainLogic();
         return;
       });
-    }
-
-    else if (this.lifeCycle === HumanLiveCycle.CallElevator) {
+    } else if (this.lifeCycle === HumanLiveCycle.CallElevator) {
       this.elevator.addStop(this.floorCurrent);
-      // if(this.elevator.currentFloor === this.floorCurrent){
-      //   this.lifeCycle = HumanLiveCycle.LookInside;
-      //   this.mainLogic();
-      //   return;
-      // }
-
       this.lifeCycle = HumanLiveCycle.WaitElevator;
 
-       console.log(`Call Elevator: ${this.humanId}`)
       Observer.once("elevatorStopsOnFloor", (obj: { floor: number }) => {
         if (obj.floor === this.floorCurrent && this.lifeCycle === HumanLiveCycle.WaitElevator) {
           this.lifeCycle = HumanLiveCycle.LookInside;
@@ -122,95 +115,68 @@ class Human {
       });
 
       return;
-    }
-    
-    else if (this.lifeCycle === HumanLiveCycle.WaitElevator) {
-      
+    } else if (this.lifeCycle === HumanLiveCycle.WaitElevator) {
       return;
-    }
+    } else if (this.lifeCycle === HumanLiveCycle.LookInside) {
+      const result =
+        this.elevator.lookinside() === this.direction ||
+        this.elevator.lookinside() === Direction.None;
 
-    else if (this.lifeCycle === HumanLiveCycle.LookInside) {
-      const result = this.elevator.lookinside() === this.direction || this.elevator.lookinside() === Direction.None;
-      
-      console.log(`Look Inside: ${this.humanId}`)
       this.elevator.mayInside() && result
         ? (this.lifeCycle = HumanLiveCycle.StepIn)
         : (this.lifeCycle = HumanLiveCycle.ReCallElevator);
       this.mainLogic();
       return;
-    }
-
-    else if (this.lifeCycle === HumanLiveCycle.ReCallElevator) {
+    } else if (this.lifeCycle === HumanLiveCycle.ReCallElevator) {
       this.lifeCycle = HumanLiveCycle.WaitLeave;
 
       Observer.once("elevatorLeavesFloor", (obj: { floor: number }) => {
-        if(obj.floor === this.floorCurrent && this.lifeCycle === HumanLiveCycle.WaitLeave) {
-          console.log(`Call Again: ${this.humanId}`)
+        if (obj.floor === this.floorCurrent && this.lifeCycle === HumanLiveCycle.WaitLeave) {
           this.lifeCycle = HumanLiveCycle.CallElevator;
           this.mainLogic();
           return;
         }
       });
       return;
-    }
-
-    else if (this.lifeCycle === HumanLiveCycle.WaitLeave) {
-      return
-    }
-
-    else if (this.lifeCycle === HumanLiveCycle.StepIn) {
-      console.log(`AddPassanger: ${this.humanId}`)
+    } else if (this.lifeCycle === HumanLiveCycle.WaitLeave) {
+      return;
+    } else if (this.lifeCycle === HumanLiveCycle.StepIn) {
       this.elevator.addPassanger(this);
       this.lifeCycle = HumanLiveCycle.InElevator;
 
       this.mainLogic();
       return;
-    }
-
-    else if (this.lifeCycle === HumanLiveCycle.InElevator) {
-      console.log(`in elevator: ${this.humanId}`)
+    } else if (this.lifeCycle === HumanLiveCycle.InElevator) {
       this.elevator.addStop(this.floorDesired);
       this.lifeCycle = HumanLiveCycle.Riding;
 
       this.mainLogic();
       return;
-    }
-
-    else if (this.lifeCycle === HumanLiveCycle.Riding) {
+    } else if (this.lifeCycle === HumanLiveCycle.Riding) {
       Observer.once("elevatorStopsOnFloor", (obj: { floor: number }) => {
         if (obj.floor === this.floorDesired && this.lifeCycle === HumanLiveCycle.Riding) {
-          console.log(`Riding: ${this.humanId}`)
           this.lifeCycle = HumanLiveCycle.Out;
           this.mainLogic();
           return;
         }
       });
       return;
-    }
-
-    else if (this.lifeCycle === HumanLiveCycle.Out) {
-      console.log(`RemovePassanger: ${this.humanId}`)
+    } else if (this.lifeCycle === HumanLiveCycle.Out) {
       this.elevator.removePessanger(this);
       this.lifeCycle = HumanLiveCycle.FromElevator;
 
       this.mainLogic();
       return;
-    }
-
-    else if (this.lifeCycle === HumanLiveCycle.FromElevator) {
+    } else if (this.lifeCycle === HumanLiveCycle.FromElevator) {
       this.container.lookingDirection = this.lookDirection;
       this.moveTo = 900;
       this.tween.start().onComplete(() => {
-        console.log(`From Elevator: ${this.humanId}`)
         this.lifeCycle = HumanLiveCycle.Die;
         this.mainLogic();
         return;
       });
       return;
-    }
-
-    else if (this.lifeCycle === HumanLiveCycle.Die) {
-      console.log(`Die: ${this.humanId}`)
+    } else if (this.lifeCycle === HumanLiveCycle.Die) {
       this.delete();
 
       return;
@@ -264,6 +230,10 @@ class Human {
   delete() {
     this.deleteTicker();
     this.container.destroy({ children: true });
+  }
+
+  static wipe() {
+    Human.instances.forEach((v) => v.delete());
   }
 
   look(): boolean {

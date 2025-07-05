@@ -1,4 +1,4 @@
-import { Container, Graphics, Text, Application } from "pixi.js";
+import { Container } from "pixi.js";
 import { LookDirection } from "./enums";
 
 declare module "pixi.js" {

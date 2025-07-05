@@ -20,7 +20,6 @@ export default [
       "./src/ts/types.ts",
       "./src/ts/EventObserver.ts",
       "./src/ts/PixiExtention.ts",
-      "./src/ts/Elevator.ts"
     ],
   },
   {

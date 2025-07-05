@@ -19,7 +19,7 @@ interface BuildingObj {
 
 class Building {
   constructor(buildingObj: BuildingObj = {} as BuildingObj) {
-    this.floorsCount = buildingObj.floorsCount ?? 10;
+    this.floorsCount = buildingObj.floorsCount ?? 4;
     this.floorHeight = buildingObj.floorHeight ?? 70;
     this.floorWidth = buildingObj.floorWidth ?? 800;
     this.lineColor = buildingObj.lineColor ?? 0xfeeb77;
@@ -37,6 +37,9 @@ class Building {
       this.elevatorShaft -
       20
     );
+    this.container;
+
+    Building.instances.push(this);
   }
 
   floorsCount;
@@ -52,16 +55,26 @@ class Building {
   edgeOfFloor;
   humanWidth;
   humanHeight;
+  container: Container | null = null;
+  static instances: Building[] = [];
+
+  static wipe() {
+    Building.instances.forEach((v) => v.delete());
+  }
+
+  delete() {
+    this.container?.destroy({ children: true });
+  }
 
   draw() {
-    const container = new Container();
+    this.container = new Container();
     const graphics = new Graphics();
 
     graphics
       .rect(0, 0, this.floorWidth, this.floorsCount * this.floorHeight + this.lineWidth * 2)
       .stroke({ width: this.lineWidth, color: this.lineColor });
 
-      const elevator = new Elevator({
+    const elevator = new Elevator({
       x: 0,
       y: 0,
       floorHeight: this.floorHeight,
@@ -95,27 +108,27 @@ class Building {
         textDisplacementRight: this.textDisplacementRight,
       });
 
-      floor.humanSpawner = (i === 5 || i === 6)  ?spawner : null;
-      container.addChild(floor.init());
-      
+      floor.humanSpawner = spawner;
+      this.container.addChild(floor.init());
+
       a += this.floorHeight;
     }
-    
-    // const mask = new Graphics();
-    // mask
-    //   .rect(
-    //     -3,
-    //     -3,
-    //     this.floorWidth + 5,
-    //     this.floorsCount * this.floorHeight + this.lineWidth * 2 + 6,
-    //   )
-    //   .fill();
 
-    container.label = "Building";
-    container.addChild(graphics, elevator.init());
-    // container.mask = mask;
+    const mask = new Graphics();
+    mask
+      .rect(
+        -3,
+        -3,
+        this.floorWidth + 5,
+        this.floorsCount * this.floorHeight + this.lineWidth * 2 + 6,
+      )
+      .fill();
 
-    return container;
+    this.container.label = "Building";
+    this.container.addChild(graphics, mask, elevator.init());
+    this.container.mask = mask;
+
+    return this.container;
   }
 }
 

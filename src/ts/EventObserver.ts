@@ -1,6 +1,6 @@
 interface CustomEvents {
   elevatorStopsOnFloor: { floor: number };
-  elevatorLeavesFloor: { floor: number }
+  elevatorLeavesFloor: { floor: number };
 }
 
 class EventObserver<Events extends Record<string, any>> {
@@ -30,6 +30,10 @@ class EventObserver<Events extends Record<string, any>> {
       listener(payload);
     };
     this.on(event, wrapper);
+  }
+
+  whipe() {
+    this.listeners = {};
   }
 }
 
