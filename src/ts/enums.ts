@@ -10,6 +10,7 @@ enum Direction {
 enum State {
   Wait,
   Move,
+  Panding,
 }
 
 enum LookDirection {
@@ -19,9 +20,16 @@ enum LookDirection {
 }
 
 enum HumanLiveCycle {
+  None,
   Born,
   ToElevator,
-  InToElevator,
+  CallElevator,
+  LookInside,
+  StepIn,
+  WaitElevator,
+  InElevator,
+  Riding,
+  Out,
   FromElevator,
   Die,
 }

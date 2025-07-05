@@ -1,6 +1,7 @@
 import { Container, Graphics } from "pixi.js";
 import { HumanSpawner } from "./HumanSpawner";
 import { Floor } from "./Floor";
+import { Elevator } from "./Elevator";
 
 interface BuildingObj {
   floorsCount: number;
@@ -11,18 +12,31 @@ interface BuildingObj {
   lineWidth?: number;
   textDisplacementRight?: number;
   textDisplacementDown?: number;
+  elevatorCapacity?: number;
+  humanWidth?: number;
+  humanHeight?: number;
 }
 
 class Building {
   constructor(buildingObj: BuildingObj = {} as BuildingObj) {
-    this.floorsCount = buildingObj.floorsCount ?? 4;
+    this.floorsCount = buildingObj.floorsCount ?? 10;
     this.floorHeight = buildingObj.floorHeight ?? 70;
     this.floorWidth = buildingObj.floorWidth ?? 800;
     this.lineColor = buildingObj.lineColor ?? 0xfeeb77;
-    this.elevatorShaft = buildingObj.elevatorShaft ?? 80;
+    this.elevatorCapacity = buildingObj.elevatorCapacity ?? 4;
+    this.elevatorShaft = buildingObj.elevatorShaft ?? 200;
     this.lineWidth = buildingObj.lineWidth ?? 5;
-    this.textDisplacementRight = buildingObj.textDisplacementRight ?? 650;
-    this.textDisplacementDown = buildingObj.textDisplacementDown ?? 35;
+    this.textDisplacementRight = buildingObj.textDisplacementRight ?? this.floorWidth - 100;
+    this.textDisplacementDown = buildingObj.textDisplacementDown ?? this.floorHeight - 35;
+    this.displaceSpawnerFromScreen = 100;
+    this.humanWidth = buildingObj.humanWidth ?? 30;
+    this.humanHeight = buildingObj.humanHeight ?? 50;
+    this.edgeOfFloor = -(
+      this.floorWidth +
+      this.displaceSpawnerFromScreen -
+      this.elevatorShaft -
+      20
+    );
   }
 
   floorsCount;
@@ -33,23 +47,30 @@ class Building {
   lineWidth;
   textDisplacementRight;
   textDisplacementDown;
+  elevatorCapacity;
+  displaceSpawnerFromScreen;
+  edgeOfFloor;
+  humanWidth;
+  humanHeight;
 
   draw() {
     const container = new Container();
     const graphics = new Graphics();
 
     graphics
-      .rect(0, 0, this.floorWidth, this.floorsCount * this.floorHeight)
-      .stroke({ width: 5, color: this.lineColor });
+      .rect(0, 0, this.floorWidth, this.floorsCount * this.floorHeight + this.lineWidth * 2)
+      .stroke({ width: this.lineWidth, color: this.lineColor });
 
     let a = 0;
     for (let i = this.floorsCount; i >= 1; i--) {
       const spawner = new HumanSpawner({
         floorsTotal: this.floorsCount,
         floorCurrent: i,
-        x: 900,
-        y: a + 40,
-        moveTo: -800,
+        x: this.floorWidth + this.displaceSpawnerFromScreen,
+        y: a + this.floorHeight - this.humanHeight / 2 - 5,
+        moveTo: this.edgeOfFloor,
+        humanWidth: this.humanWidth,
+        humanHeight: this.humanHeight,
       });
 
       const floor = new Floor({
@@ -62,18 +83,36 @@ class Building {
         textDisplacementDown: this.textDisplacementDown,
         textDisplacementRight: this.textDisplacementRight,
       });
-      
+
       floor.humanSpawner = spawner;
       container.addChild(floor.init());
 
       a += this.floorHeight;
     }
 
-    const mask = new Graphics();
-    mask.rect(-2, -2, this.floorWidth + 5, this.floorsCount * this.floorHeight + 5).fill();
+    const elevator = new Elevator({
+      x: 0,
+      y: 0,
+      floorHeight: this.floorHeight,
+      floorTotal: this.floorsCount,
+      elevatorCapacity: this.elevatorCapacity,
+      floorStart: 1,
+      elevatorShaftWidth: this.elevatorShaft,
+    });
 
-    container.addChild(graphics, mask);
-    container.mask = mask;
+    // const mask = new Graphics();
+    // mask
+    //   .rect(
+    //     -3,
+    //     -3,
+    //     this.floorWidth + 5,
+    //     this.floorsCount * this.floorHeight + this.lineWidth * 2 + 6,
+    //   )
+    //   .fill();
+
+    container.label = "Building";
+    container.addChild(graphics, elevator.init());
+    // container.mask = mask;
 
     return container;
   }

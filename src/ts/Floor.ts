@@ -37,7 +37,7 @@ class Floor {
   private text;
   private graphics;
   private lineColor;
-  private floorLength
+  private floorLength;
   private _humanSpawner: HumanSpawner | null = null;
 
   set humanSpawner(value: HumanSpawner) {
@@ -54,7 +54,7 @@ class Floor {
 
     if (!this._humanSpawner) throw new Error("Human Spawner must be added befor Floor.init()");
 
-    this.container.label = `Floor ${this.floorCurrent}`;
+    this.container.label = `Floor: ${this.floorCurrent}`;
     this.container.addChild(this.graphics, this.text, this._humanSpawner.init());
 
     return this.container;

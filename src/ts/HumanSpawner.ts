@@ -8,6 +8,8 @@ interface HumanSpawnerObj {
   x: number;
   y: number;
   moveTo: number;
+  humanWidth: number;
+  humanHeight: number;
 }
 
 class HumanSpawner {
@@ -16,6 +18,8 @@ class HumanSpawner {
     this.floorCurrent = humanSpawnerObj.floorCurrent;
     this.x = humanSpawnerObj.x;
     this.y = humanSpawnerObj.y;
+    this.humanWidth = humanSpawnerObj.humanWidth;
+    this.humanHeight = humanSpawnerObj.humanHeight;
     this.moveTo = humanSpawnerObj.moveTo;
   }
 
@@ -24,6 +28,8 @@ class HumanSpawner {
   private floorCurrent;
   private x;
   private y;
+  private humanWidth;
+  private humanHeight;
   private minSpawnTime = 4; // in seconds
   private maxSpawnTime = 10; // in seconds
   private container = new Container();
@@ -72,10 +78,11 @@ class HumanSpawner {
           x: 0,
           y: 0,
           moveTo: this.moveTo,
+          humanWidth: this.humanWidth,
+          humanHeight: this.humanHeight,
         });
 
         this.container.addChild(human.init());
-        human.go();
       },
       this.random(this.minSpawnTime, this.maxSpawnTime) * 1000,
     );

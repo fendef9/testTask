@@ -15,7 +15,7 @@ class EventObserver<Events extends Record<string, any>> {
     this.listeners[event].push(listener);
   }
 
-  of<K extends keyof Events>(event: K, listener: (payload: Events[K]) => void) {
+  off<K extends keyof Events>(event: K, listener: (payload: Events[K]) => void) {
     if (!this.listeners[event]) this.listeners[event] = [];
 
     this.listeners[event].filter((l) => l !== listener);
@@ -24,6 +24,16 @@ class EventObserver<Events extends Record<string, any>> {
   emit<K extends keyof Events>(event: K, payload: Events[K]) {
     this.listeners[event]?.forEach((l) => l(payload));
   }
+
+  once<K extends keyof Events>(event: K, listener: (payload: Events[K]) => void) {
+    const wrapper = (payload: Events[K]) => {
+      this.off(event, wrapper);
+      listener(payload);
+    };
+    this.on(event, wrapper);
+  }
 }
 
-export { EventObserver, CustomEvents };
+const Observer = new EventObserver<CustomEvents>();
+
+export { Observer };
