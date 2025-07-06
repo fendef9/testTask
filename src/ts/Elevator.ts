@@ -59,9 +59,14 @@ class Elevator {
   public movingSpeed;
   public waitingTime;
   private static instances: Elevator[] = [];
+  private isDestroy = false;
 
   static wipe() {
-    Elevator.instances.forEach((v) => v.delete());
+
+    Elevator.instances.forEach((v) => {
+      v.isDestroy = true;
+      v.delete();
+    });
     Elevator.instances = [];
   }
 
@@ -172,6 +177,7 @@ class Elevator {
   }
 
   moveOneFloor(direction: Direction, onComplite: () => void) {
+    if (this.isDestroy) return;
     let to;
     let floor = this.currentFloor;
 
@@ -181,6 +187,7 @@ class Elevator {
         .easing(Easing.Linear.In)
         .start()
         .onComplete(() => {
+          if (this.isDestroy) return;
           Observer.emit("elevatorLeavesFloor", { floor: this.currentFloor });
           Observer.emit("elevatorStateUpdated", {
             floor: this.currentFloor,
@@ -190,8 +197,6 @@ class Elevator {
           onComplite.call(this);
         });
     };
-
-    if(this.container === null || this.container.y === null) return
     if (direction === Direction.Up) {
       to = this.container.y - this.floorHeight;
       floor += 1;
