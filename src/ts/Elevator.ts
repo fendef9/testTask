@@ -191,7 +191,6 @@ class Elevator {
         });
     };
 
-    debugger
     if(this.container === null || this.container.y === null) return
     if (direction === Direction.Up) {
       to = this.container.y - this.floorHeight;
