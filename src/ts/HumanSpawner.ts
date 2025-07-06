@@ -39,7 +39,7 @@ class HumanSpawner {
   private maxSpawnTime = 6; // in seconds
   private container: Container = new Container();
   private timer: null | (() => Ticker) = null;
-  private static instances:HumanSpawner[] = [];
+  private static instances: HumanSpawner[] = [];
 
   init() {
     this.container.label = "Humans";
@@ -85,7 +85,7 @@ class HumanSpawner {
   }
 
   static wipe() {
-    HumanSpawner.instances.forEach((v) => v.delete())
+    HumanSpawner.instances.forEach((v) => v.delete());
   }
 }
 

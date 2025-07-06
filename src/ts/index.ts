@@ -17,14 +17,13 @@ const program = async () => {
   OnApplay.callback = (liftCapacity, floorsCount) => {
     try {
       Ticker.shared.stop();
-      Elevator.wipe();
+      Building.wipe();
+      Floor.wipe();
+      HumanSpawner.wipe();
       Human.wipe();
+      Elevator.wipe();
       Observer.whipe();
       container.destroy({ children: true });
-      Floor.wipe();
-      Building.wipe();
-      HumanSpawner.wipe();
-      
     } catch (error) {
       console.warn(error);
     }

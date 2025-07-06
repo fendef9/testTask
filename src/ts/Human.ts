@@ -59,11 +59,11 @@ class Human {
   public humanId;
   public container;
   private _moveTo: number;
-  private tween:Tween | null;
+  private tween: Tween | null;
   private colorCurrent;
   private graphics;
   private tolerance;
-  private elevator:Elevator | null;
+  private elevator: Elevator | null;
   private lifeCycle;
   private ticker: (() => Ticker) | null = null;
   private static instances: Human[] = [];
