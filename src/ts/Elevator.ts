@@ -62,11 +62,14 @@ class Elevator {
 
   static wipe() {
     Elevator.instances.forEach((v) => v.delete());
+    Elevator.instances = [];
   }
 
   delete() {
     this.deleteTicker();
-    this.container.destroy({ children: true });
+    this.tween?.stop();
+    this.tween = null;
+    this.container.destroy(true);
   }
 
   public init() {

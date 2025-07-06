@@ -24,6 +24,7 @@ class HumanSpawner {
     this.humanHeight = humanSpawnerObj.humanHeight;
     this.moveTo = humanSpawnerObj.moveTo;
     this.elevator = humanSpawnerObj.elevator;
+    HumanSpawner.instances.push(this);
   }
 
   private moveTo;
@@ -36,8 +37,9 @@ class HumanSpawner {
   private humanHeight;
   private minSpawnTime = 4; // in seconds
   private maxSpawnTime = 6; // in seconds
-  private container = new Container();
+  private container: Container = new Container();
   private timer: null | (() => Ticker) = null;
+  private static instances:HumanSpawner[] = [];
 
   init() {
     this.container.label = "Humans";
@@ -75,6 +77,15 @@ class HumanSpawner {
 
   stopSpawn() {
     this.timer?.();
+  }
+
+  delete() {
+    this.stopSpawn();
+    this.container.destroy(true);
+  }
+
+  static wipe() {
+    HumanSpawner.instances.forEach((v) => v.delete())
   }
 }
 

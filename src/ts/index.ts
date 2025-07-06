@@ -1,15 +1,13 @@
 import "./formEventManager";
 import "./PixiExtention";
 import { OnApplay } from "./OnApplay";
-import { Container, Application } from "pixi.js";
-// import { initDevtools } from "@pixi/devtools";
+import { Container, Application, Ticker } from "pixi.js";
 import { Building } from "./Building";
 import { Human } from "./Human";
 import { Elevator } from "./Elevator";
 import { Floor } from "./Floor";
 import { Observer } from "./EventObserver";
-// import { Human } from "./Human";
-// import { Utils } from "./utils";
+import { HumanSpawner } from "./HumanSpawner";
 
 const program = async () => {
   const app = new Application();
@@ -17,12 +15,19 @@ const program = async () => {
   let building = new Building();
 
   OnApplay.callback = (liftCapacity, floorsCount) => {
-    container.destroy({ children: true });
-    Observer.whipe();
-    Elevator.wipe();
-    Human.wipe();
-    Floor.wipe();
-    Building.wipe();
+    try {
+      Ticker.shared.stop();
+      Elevator.wipe();
+      Human.wipe();
+      Observer.whipe();
+      container.destroy({ children: true });
+      Floor.wipe();
+      Building.wipe();
+      HumanSpawner.wipe();
+      
+    } catch (error) {
+      console.warn(error);
+    }
 
     building = new Building({ floorsCount: floorsCount, elevatorCapacity: liftCapacity });
     container = new Container().addChild(building.draw());

@@ -59,11 +59,11 @@ class Human {
   public humanId;
   public container;
   private _moveTo: number;
-  private tween;
+  private tween:Tween | null;
   private colorCurrent;
   private graphics;
   private tolerance;
-  private elevator;
+  private elevator:Elevator | null;
   private lifeCycle;
   private ticker: (() => Ticker) | null = null;
   private static instances: Human[] = [];
@@ -72,7 +72,7 @@ class Human {
   private addTicker() {
     const func = () => {
       !this.look() ? this.continue() : this.pause();
-      this.tween.update();
+      this.tween?.update();
     };
     Ticker.shared.add(func);
     this.ticker = () => Ticker.shared.remove(func);
@@ -86,20 +86,20 @@ class Human {
       this.mainLogic();
       return;
     } else if (this.lifeCycle === HumanLiveCycle.ToElevator) {
-      this.tween.start().onComplete(() => {
-        this.tween.stop();
+      this.tween?.start().onComplete(() => {
+        this.tween?.stop();
         this.lifeCycle = HumanLiveCycle.CallElevator;
 
         this.mainLogic();
         return;
       });
     } else if (this.lifeCycle === HumanLiveCycle.CallElevator) {
-      if (this.elevator.isDoorOpen && this.elevator.currentFloor === this.floorCurrent) {
+      if (this.elevator?.isDoorOpen && this.elevator.currentFloor === this.floorCurrent) {
         this.lifeCycle = HumanLiveCycle.LookInside;
         this.mainLogic();
         return;
       }
-      this.elevator.addStop(this.floorCurrent);
+      this.elevator?.addStop(this.floorCurrent);
       this.lifeCycle = HumanLiveCycle.WaitElevator;
 
       Observer.once("elevatorStopsOnFloor", (obj: { floor: number }) => {
@@ -115,10 +115,10 @@ class Human {
       return;
     } else if (this.lifeCycle === HumanLiveCycle.LookInside) {
       const result =
-        this.elevator.lookinside() === this.direction ||
-        this.elevator.lookinside() === Direction.None;
+        this.elevator?.lookinside() === this.direction ||
+        this.elevator?.lookinside() === Direction.None;
 
-      this.elevator.mayInside() && result
+      this.elevator?.mayInside() && result
         ? (this.lifeCycle = HumanLiveCycle.StepIn)
         : (this.lifeCycle = HumanLiveCycle.ElevatorUpdateState);
       this.mainLogic();
@@ -135,7 +135,7 @@ class Human {
           return;
         }
 
-        if (this.elevator.isDoorOpen && obj.state === State.ElevatorEmpty) {
+        if (this.elevator?.isDoorOpen && obj.state === State.ElevatorEmpty) {
           Observer.off("elevatorStateUpdated", handler);
           this.lifeCycle = HumanLiveCycle.LookInside;
           this.mainLogic();
@@ -148,13 +148,13 @@ class Human {
       return;
     } else if (this.lifeCycle === HumanLiveCycle.WaitUpdate) return;
     else if (this.lifeCycle === HumanLiveCycle.StepIn) {
-      this.elevator.addPassanger(this);
+      this.elevator?.addPassanger(this);
       this.lifeCycle = HumanLiveCycle.InElevator;
 
       this.mainLogic();
       return;
     } else if (this.lifeCycle === HumanLiveCycle.InElevator) {
-      this.elevator.addStop(this.floorDesired);
+      this.elevator?.addStop(this.floorDesired);
       this.lifeCycle = HumanLiveCycle.Riding;
 
       this.mainLogic();
@@ -169,7 +169,7 @@ class Human {
       });
       return;
     } else if (this.lifeCycle === HumanLiveCycle.Out) {
-      this.elevator.removePessanger(this);
+      this.elevator?.removePessanger(this);
       this.lifeCycle = HumanLiveCycle.FromElevator;
 
       this.mainLogic();
@@ -177,7 +177,7 @@ class Human {
     } else if (this.lifeCycle === HumanLiveCycle.FromElevator) {
       this.container.lookingDirection = this.lookDirection;
       this.moveTo = 900;
-      this.tween.start().onComplete(() => {
+      this.tween?.start().onComplete(() => {
         this.lifeCycle = HumanLiveCycle.Die;
         this.mainLogic();
         return;
@@ -218,11 +218,11 @@ class Human {
   }
 
   pause() {
-    this.tween.pause();
+    this.tween?.pause();
   }
 
   continue() {
-    this.tween.resume();
+    this.tween?.resume();
   }
 
   teleport(x: number, y: number) {
@@ -231,16 +231,19 @@ class Human {
   }
 
   stop() {
-    this.tween.stop();
+    this.tween?.stop();
   }
 
   delete() {
     this.deleteTicker();
-    this.container.destroy({ children: true });
+    this.tween = null;
+    this.elevator = null;
+    this.container.destroy(true);
   }
 
   static wipe() {
     Human.instances.forEach((v) => v.delete());
+    Human.instances = [];
   }
 
   look(): boolean {

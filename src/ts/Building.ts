@@ -60,10 +60,11 @@ class Building {
 
   static wipe() {
     Building.instances.forEach((v) => v.delete());
+    Building.instances = [];
   }
 
   delete() {
-    this.container?.destroy({ children: true });
+    this.container?.destroy(true);
   }
 
   draw() {

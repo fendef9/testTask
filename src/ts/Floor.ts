@@ -44,6 +44,7 @@ class Floor {
 
   static wipe() {
     Floor.instances.forEach((v) => v.delete());
+    Floor.instances = [];
   }
 
   delete() {
