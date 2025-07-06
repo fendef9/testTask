@@ -23,7 +23,7 @@ class Building {
     this.floorHeight = buildingObj.floorHeight ?? 70;
     this.floorWidth = buildingObj.floorWidth ?? 800;
     this.lineColor = buildingObj.lineColor ?? 0xfeeb77;
-    this.elevatorCapacity = buildingObj.elevatorCapacity ?? 4;
+    this.elevatorCapacity = buildingObj.elevatorCapacity ?? 2;
     this.elevatorShaft = buildingObj.elevatorShaft ?? 200;
     this.lineWidth = buildingObj.lineWidth ?? 5;
     this.textDisplacementRight = buildingObj.textDisplacementRight ?? this.floorWidth - 100;

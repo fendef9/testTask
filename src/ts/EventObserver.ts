@@ -1,6 +1,9 @@
+import { State } from "./enums";
+
 interface CustomEvents {
   elevatorStopsOnFloor: { floor: number };
   elevatorLeavesFloor: { floor: number };
+  elevatorStateUpdated: { floor: number; state: State };
 }
 
 class EventObserver<Events extends Record<string, any>> {

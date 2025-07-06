@@ -13,19 +13,22 @@ import { Observer } from "./EventObserver";
 
 const program = async () => {
   const app = new Application();
-  const container = new Container();
+  let container = new Container();
   let building = new Building();
 
   OnApplay.callback = (liftCapacity, floorsCount) => {
-    container.removeChildren();
-    Building.wipe();
-    Human.wipe();
-    Elevator.wipe();
-    Floor.wipe();
+    container.destroy({ children: true });
     Observer.whipe();
+    Elevator.wipe();
+    Human.wipe();
+    Floor.wipe();
+    Building.wipe();
 
     building = new Building({ floorsCount: floorsCount, elevatorCapacity: liftCapacity });
-    container.addChild(building.draw());
+    container = new Container().addChild(building.draw());
+    container.x = 100;
+    container.y = 100;
+    app.stage.addChild(container);
   };
 
   await app.init({ background: "#1099bb", resizeTo: window });

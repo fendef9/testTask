@@ -1,5 +1,5 @@
 import { Container, Graphics, Text, Ticker } from "pixi.js";
-import { Direction, LookDirection, HumanLiveCycle, State } from "./enums";
+import { Direction, LookDirection, HumanLiveCycle } from "./enums";
 import { Tween, Easing } from "@tweenjs/tween.js";
 import { Observer } from "./EventObserver";
 import { Elevator } from "./Elevator";
@@ -94,11 +94,6 @@ class Human {
         return;
       });
     } else if (this.lifeCycle === HumanLiveCycle.CallElevator) {
-      if (this.elevator.isDoorOpen && this.elevator.currentFloor === this.floorCurrent) {
-        this.lifeCycle = HumanLiveCycle.LookInside;
-        this.mainLogic();
-        return;
-      }
       this.elevator.addStop(this.floorCurrent);
       this.lifeCycle = HumanLiveCycle.WaitElevator;
 
@@ -111,43 +106,55 @@ class Human {
       });
 
       return;
-    } else if (this.lifeCycle === HumanLiveCycle.WaitElevator) {
-      return;
-    } else if (this.lifeCycle === HumanLiveCycle.LookInside) {
+    } else if (this.lifeCycle === HumanLiveCycle.WaitElevator) return;
+    else if (this.lifeCycle === HumanLiveCycle.LookInside) {
       const result =
         this.elevator.lookinside() === this.direction ||
         this.elevator.lookinside() === Direction.None;
 
+    
       this.elevator.mayInside() && result
-        ? (this.lifeCycle = HumanLiveCycle.StepIn)
-        : (this.lifeCycle = HumanLiveCycle.ElevatorUpdateState);
+        ? this.lifeCycle = HumanLiveCycle.StepIn
+        :
+        this.lifeCycle = HumanLiveCycle.ElevatorUpdateState;
+        // this.lifeCycle = HumanLiveCycle.ReCallElevator
+      
       this.mainLogic();
       return;
-    } else if (this.lifeCycle === HumanLiveCycle.ElevatorUpdateState) {
+    } 
+    
+    else if(this.lifeCycle === HumanLiveCycle.ElevatorUpdateState) {
       this.lifeCycle = HumanLiveCycle.WaitUpdate;
 
-      const handler = (obj: { floor: number; state: State }) => {
-        if (obj.floor !== this.floorCurrent || this.lifeCycle !== HumanLiveCycle.WaitUpdate) return;
-        if (obj.state === State.LiveFloor) {
-          Observer.off("elevatorStateUpdated", handler);
+      Observer.once("elevatorStateUpdated", (obj: { floor: number }) => {
+        if(obj.floor === this.floorCurrent && 
+            this.lifeCycle === HumanLiveCycle.WaitUpdate &&
+            this.elevator.isDoorOpen
+        )   this.lifeCycle = HumanLiveCycle.LookInside;
+        else this.lifeCycle = HumanLiveCycle.ReCallElevator;
+
+        this.mainLogic();
+        return;
+      })
+      return;
+    }
+
+    else if(this.lifeCycle = HumanLiveCycle.WaitUpdate) return;
+    
+    else if (this.lifeCycle === HumanLiveCycle.ReCallElevator) {
+      this.lifeCycle = HumanLiveCycle.WaitLeave;
+
+      Observer.once("elevatorLeavesFloor", (obj: { floor: number }) => {
+        if (obj.floor === this.floorCurrent && this.lifeCycle === HumanLiveCycle.WaitLeave) {
           this.lifeCycle = HumanLiveCycle.CallElevator;
           this.mainLogic();
           return;
         }
-
-        if (this.elevator.isDoorOpen && obj.state === State.ElevatorEmpty) {
-          Observer.off("elevatorStateUpdated", handler);
-          this.lifeCycle = HumanLiveCycle.LookInside;
-          this.mainLogic();
-          return;
-        }
-      };
-
-      Observer.on("elevatorStateUpdated", handler);
-
+      });
       return;
-    } else if (this.lifeCycle === HumanLiveCycle.WaitUpdate) return;
-    else if (this.lifeCycle === HumanLiveCycle.StepIn) {
+    } else if (this.lifeCycle === HumanLiveCycle.WaitLeave) {
+      return;
+    } else if (this.lifeCycle === HumanLiveCycle.StepIn) {
       this.elevator.addPassanger(this);
       this.lifeCycle = HumanLiveCycle.InElevator;
 

@@ -3,7 +3,7 @@ import { Container, Graphics, Ticker } from "pixi.js";
 import { Observer } from "./EventObserver";
 import { Utils } from "./Utils";
 import { Human } from "./Human";
-import { Direction } from "./enums";
+import { Direction, State } from "./enums";
 
 interface ElevatorObj {
   x: number;
@@ -115,6 +115,7 @@ class Elevator {
     ];
 
     const index = this.humanIndex.findIndex((v) => v === null);
+
     this.humanIndex[index] = passanger.container.label;
 
     const pos = placeArr[index];
@@ -129,13 +130,11 @@ class Elevator {
     this.container.addChild(humanContainer);
 
     this.currentElevatorCapacity += 1;
+
+    Observer.emit("elevatorStateUpdated", { floor: this.currentFloor, state: State.SomeoneEnter });
   }
 
   public removePessanger(passanger: Human) {
-    this.currentElevatorCapacity -= 1;
-
-    if (this.seatsLeft === this.elevatorCapacity) this.humansDirection = Direction.None;
-
     const index = this.humanIndex.findIndex((v) => v === passanger.container.label);
     this.humanIndex[index] = null;
 
@@ -147,6 +146,16 @@ class Elevator {
 
     floor?.addChild(humanContainer);
     passanger.teleport(215, (this.floorTotal - passanger.floorDesired) * this.floorHeight + 40);
+
+    this.currentElevatorCapacity -= 1;
+    if (this.seatsLeft === this.elevatorCapacity) {
+      this.humansDirection = Direction.None;
+      Observer.emit("elevatorStateUpdated", {
+        floor: this.currentFloor,
+        state: State.ElevatorEmpty,
+      });
+    }
+    Observer.emit("elevatorStateUpdated", { floor: this.currentFloor, state: State.SomeoneExit });
   }
 
   public lookinside() {
@@ -169,6 +178,10 @@ class Elevator {
         .start()
         .onComplete(() => {
           Observer.emit("elevatorLeavesFloor", { floor: this.currentFloor });
+          Observer.emit("elevatorStateUpdated", {
+            floor: this.currentFloor,
+            state: State.LiveFloor,
+          });
           this.currentFloor = floor;
           onComplite.call(this);
         });
@@ -208,9 +221,15 @@ class Elevator {
       this.deleteStop(this.currentFloor);
       this.isDoorOpen = true;
       Observer.emit("elevatorStopsOnFloor", { floor: this.currentFloor });
+      Observer.emit("elevatorStateUpdated", { floor: this.currentFloor, state: State.DoorOpen });
 
       Utils.setTimeout(() => {
         this.isDoorOpen = false;
+        Observer.emit("elevatorStateUpdated", {
+          floor: this.currentFloor,
+          state: State.DoorClosed,
+        });
+
         this.elevatorLogic();
       }, this.waitingTime);
     } else this.elevatorLogic();

@@ -7,9 +7,12 @@ enum Direction {
 }
 
 enum State {
-  Wait,
-  Move,
-  Panding,
+  DoorOpen,
+  DoorClosed,
+  ElevatorEmpty,
+  SomeoneExit,
+  SomeoneEnter,
+  LiveFloor,
 }
 
 enum LookDirection {
@@ -24,6 +27,8 @@ enum HumanLiveCycle {
   ToElevator,
   CallElevator,
   LookInside,
+  ElevatorUpdateState,
+  WaitUpdate,
   ReCallElevator,
   WaitLeave,
   StepIn,
